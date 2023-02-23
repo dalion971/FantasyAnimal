@@ -68,7 +68,6 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
         _;
     }
 
-    // mint主入口
     function nftMint(bool isPremint, bool isFreeMint, uint256 mintNum) public payable
     {
         // isOnSale isFree isPre 三个参数互相组合会有几种情况，按需求实现
@@ -100,7 +99,8 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
         onSaleMint(mintNum);
     }
 
-    function freeMint(uint256 mintNum) internal onlyFreeMint(msg.sender, mintNum)
+    // 特权mint 不应被继承
+    function freeMint(uint256 mintNum) private onlyFreeMint(msg.sender, mintNum)
     {
         // 不校验msg.value 但还是要校验超发
         require(totalSupply() + mintNum <= maxSupply,"over max supply");
@@ -111,7 +111,8 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
         updateAddrFreeMintNum(msg.sender, false, mintNum); 
     }
 
-    function preMint(uint256 mintNum) internal onlyPremint(msg.sender)
+    // 特权mint 不应被继承
+    function preMint(uint256 mintNum) private onlyPremint(msg.sender)
     {
         require(totalSupply() + mintNum <= maxSupply,"over max supply");
         require(mintNum <= nftPeerMintCnt, "limited mint num");
@@ -161,17 +162,17 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
         whiteListAddress[addr] = Buyer(false, false , false, 0);
     }
 
-    function isAddrWhiteList(address addr) public view returns(bool)
+    function isAddrWhiteList(address addr) internal view returns(bool)
     {
         return whiteListAddress[addr].isAddrWhiteList;
     }
 
-    function isAddrFreeMint(address addr) public view returns(bool)
+    function isAddrFreeMint(address addr) internal view returns(bool)
     {
         return whiteListAddress[addr].isPreMint;
     }
 
-    function isAddrPreMint(address addr) public view returns(bool)
+    function isAddrPreMint(address addr) internal view returns(bool)
     {
         return whiteListAddress[addr].isFreeMint;
     }
@@ -179,12 +180,13 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
 
 
     // 获取可以免费mint的数量余额，免费mint后，该余额会减少，该值在updateAddrWhiteList被初始化
-    function getFreeMintNumBalance(address addr) public view returns(uint256)
+    function getFreeMintNumBalance(address addr) public view returns(uint256) 
     {
         return whiteListAddress[addr].freeMintNum;
     }
 
-    function updateAddrFreeMintNum(address addr, bool forward, uint256 cnt) internal onlyOwner 
+    // 提供给特权mint 所以也不应被继承
+    function updateAddrFreeMintNum(address addr, bool forward, uint256 cnt) private onlyOwner 
     {
         // forwart == true 正向，增加额度
         if(forward)
@@ -201,6 +203,7 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
 
     }
 
+    // 加freeMint余额
     function addAddrFreeMintNum(address addr, uint256 cnt) public onlyOwner
     {
         updateAddrFreeMintNum(addr, true, cnt);
