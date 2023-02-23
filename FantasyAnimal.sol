@@ -14,6 +14,17 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
     string uriBase;
     string constant uriExtension = ".json";
 
+    struct Buyer
+    {
+        // 白名单可以按需使用
+        bool isAddrWhiteList;
+        bool isPreMint;
+        bool isFreeMint;
+        uint256 freeMintNum;
+    }
+    // white list 用来在开始售卖之前提前mint
+    mapping(address => Buyer) whiteListAddress;
+
     constructor(string memory _BaseUri) ERC721("Fantasy Animal", "FAT") 
     {
         setBaseURI(_BaseUri);
@@ -38,15 +49,88 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
         _;
     }
 
-    function setStartSale() public onlyOwner { isSale = true; }
-    function setStopSale() public onlyOwner { isSale = false; }
-    function getSaleStatus() public view returns(bool){ return isSale; }
-
-    function nftFantasyAnimalMint(uint256 mintNum) public payable onlyOnSale
+    modifier onlyFreeMint(address addr, uint256 mintNum)
     {
-        require(mintNum * cost <= msg.value, "not enough ether");
+        require(isAddrFreeMint(addr), "not allow free mint");
+        require(getFreeMintNumBalance(addr) >= mintNum, "not enough free mint nums");
+        _;
+    }
+
+    modifier onlyPremint(address addr)
+    {
+        require(isAddrPreMint(addr), "not allow premint");
+        _;
+    }
+
+    modifier onlyWhiteList(address addr)
+    {
+        require(isAddrWhiteList(addr), "not whilte List Number");
+        _;
+    }
+    // 功能 白名单可以提前mint
+
+
+    function nftMint(bool isPremint, bool isFreeMint, uint256 mintNum) public payable
+    {
+        // isOnSale isFree isPre 三个参数互相组合会有几种情况，按需求实现
+        // 搞个demo
+        // 预售+免费mint
+        if(isPremint && isFreeMint)
+        {
+            // Premint这里不考虑 onSale状态
+            freeMint(mintNum);
+            return;
+        }
+        // 仅预售
+        if(isPremint)
+        {
+            // Premint这里不考虑 onSale状态
+            preMint(mintNum);
+            return;
+        }
+        // 仅免费mint
+        if(isFreeMint)
+        {
+            // 非preMint需要考虑onSale状态
+            require(getSaleStatus(), "not on sale");
+            freeMint(mintNum);
+            return;
+        }
+
+        // 都不是 那就是正常sale
+        onSaleMint(mintNum);
+    }
+
+    function freeMint(uint256 mintNum) internal onlyFreeMint(msg.sender, mintNum)
+    {
+        // 不校验msg.value 但还是要校验超发
         require(totalSupply() + mintNum <= maxSupply,"over max supply");
         require(mintNum <= nftPeerMintCnt, "limited mint num");
+        commonMint(mintNum);
+
+        // after free mint update num
+        updateAddrFreeMintNum(msg.sender, false, mintNum); 
+    }
+
+    function preMint(uint256 mintNum) internal onlyPremint(msg.sender)
+    {
+        require(totalSupply() + mintNum <= maxSupply,"over max supply");
+        require(mintNum <= nftPeerMintCnt, "limited mint num");
+        require(mintNum * cost <= msg.value, "not enough ether");
+        commonMint(mintNum);
+    }
+
+    function onSaleMint(uint256 mintNum) internal onlyOnSale
+    {
+        require(totalSupply() + mintNum <= maxSupply,"over max supply");
+        require(mintNum <= nftPeerMintCnt, "limited mint num");
+        require(mintNum * cost <= msg.value, "not enough ether");
+        commonMint(mintNum);
+    }
+
+    function commonMint(uint256 mintNum) internal
+    {
+
         for (uint256 i = 0; i < mintNum; i++) {
             uint256 mintIndex = totalSupply();
             if (totalSupply() < maxSupply) {
@@ -60,4 +144,71 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
         uint256 balance = address(this).balance;
         payable(to).transfer(balance);
     }
+
+
+    function updateAddrBuyerPropertyList(address addr, bool isWhiteList, bool, bool Premint, bool canFreeMint, uint freeMintNum) public onlyOwner 
+    {
+        // 可调整何时addr被加入到白名单
+        require(!isSale);
+
+        whiteListAddress[addr] = Buyer(isWhiteList, Premint, canFreeMint, freeMintNum);
+    }
+
+    function removeAddrFromBuyerPropertyList(address addr) public onlyOwner 
+    {
+        // 可调整
+        require(!isSale);
+        // 需要在白名单
+        whiteListAddress[addr] = Buyer(false, false , false, 0);
+    }
+
+    function isAddrWhiteList(address addr) public view returns(bool)
+    {
+        return whiteListAddress[addr].isAddrWhiteList;
+    }
+
+    function isAddrFreeMint(address addr) public view returns(bool)
+    {
+        return whiteListAddress[addr].isPreMint;
+    }
+
+    function isAddrPreMint(address addr) public view returns(bool)
+    {
+        return whiteListAddress[addr].isFreeMint;
+    }
+
+
+
+    // 获取可以免费mint的数量余额，免费mint后，该余额会减少，该值在updateAddrWhiteList被初始化
+    function getFreeMintNumBalance(address addr) public view returns(uint256)
+    {
+        return whiteListAddress[addr].freeMintNum;
+    }
+
+    function updateAddrFreeMintNum(address addr, bool forward, uint256 cnt) internal onlyOwner 
+    {
+        // forwart == true 正向，增加额度
+        if(forward)
+        {
+            //防止上溢出
+            whiteListAddress[addr].freeMintNum =  whiteListAddress[addr].freeMintNum >= type(uint256).max - cnt ? type(uint256).max : whiteListAddress[addr].freeMintNum + cnt;
+        }
+        // false 反向减额度
+        else
+        {
+            // 防止下溢出
+            whiteListAddress[addr].freeMintNum = whiteListAddress[addr].freeMintNum <= cnt ? 0 : whiteListAddress[addr].freeMintNum - cnt;
+        }
+
+    }
+
+    function addAddrFreeMintNum(address addr, uint256 cnt) public onlyOwner
+    {
+        updateAddrFreeMintNum(addr, true, cnt);
+    }
+
+
+    function setStartSale() public onlyOwner { isSale = true; }
+    function setStopSale() public onlyOwner { isSale = false; }
+    function getSaleStatus() public view returns(bool){ return isSale; }
 }
