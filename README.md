@@ -39,6 +39,8 @@ https://github.com/HashLips/hashlips_art_engine.git
 ## ERC721合约
 主要是继承自oz，没什么好说的。主要和NFT相关的主要是BaseUri的设置，NFT市场销售会访问这个。第一个项目的需求比较简单，设定好价格，mint上限，mint开关即可。后面项目逐渐把预售、白名单之类的功能也都补齐
 
+### 补充功能预售、免费mint 
+
 ## 合约测试（abi）
 主要用的web3的库，后面了解到有一些集成的框架比如thirdweb，后面再去了解下
 
