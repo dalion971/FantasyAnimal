@@ -67,9 +67,8 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
         require(isAddrWhiteList(addr), "not whilte List Number");
         _;
     }
-    // 功能 白名单可以提前mint
 
-
+    // mint主入口
     function nftMint(bool isPremint, bool isFreeMint, uint256 mintNum) public payable
     {
         // isOnSale isFree isPre 三个参数互相组合会有几种情况，按需求实现
