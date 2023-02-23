@@ -34,7 +34,7 @@ https://github.com/HashLips/hashlips_art_engine.git
 这个工具提供多个脚本，可以一键更新image的链接
 
 ## IPFS 上传
-最开始放本低IPFS的，但可能是网络不好，公共网关一直访问不了，不知道自己是否ipfs同步成功。后面改用的pinata
+最开始放本地IPFS的，但可能是网络不好，公共网关一直访问不了，不知道自己是否ipfs同步成功。后面改用的pinata
 
 ## ERC721合约
 主要是继承自oz，没什么好说的。主要和NFT相关的主要是BaseUri的设置，NFT市场销售会访问这个。第一个项目的需求比较简单，设定好价格，mint上限，mint开关即可。后面项目逐渐把预售、白名单之类的功能也都补齐
