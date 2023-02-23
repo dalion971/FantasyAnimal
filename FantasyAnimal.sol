@@ -18,11 +18,13 @@ contract FantasyAnimal is ERC721Enumerable, Ownable {
     {
         // 白名单可以按需使用
         bool isAddrWhiteList;
+        //  可以提前mint
         bool isPreMint;
+        // 可以免费mint
         bool isFreeMint;
+        // 免费mint数量
         uint256 freeMintNum;
     }
-    // white list 用来在开始售卖之前提前mint
     mapping(address => Buyer) whiteListAddress;
 
     constructor(string memory _BaseUri) ERC721("Fantasy Animal", "FAT") 
