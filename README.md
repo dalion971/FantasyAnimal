@@ -60,8 +60,6 @@ print("saleStatus:", c.caller().getSaleStatus())
 
 ```
 
-## 合约部署
-晚上的时候gas是真的贵啊。第一次部署合约还out of gas了，白白浪费了eth。以后尽可能挑半夜发，gas便宜
 
 ## 合约验证与发布（开源）
 因为是用remix写的，并且在里面import 了 oz的库，单合约是不行的。
