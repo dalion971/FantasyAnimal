@@ -3,7 +3,6 @@
 
 ## NFT 图片合成
 
-这里面网上找了很多，但发现很多都是花钱，免费几十张、几百张，不过好在有现有的开源项目
 https://github.com/AppsusUK/NFT-Art-Generator.git
 能够生成图片，metadata，调整稀有度参数，不过在图片传完ipfs后，要手动写脚本更新json，并不复杂
 
